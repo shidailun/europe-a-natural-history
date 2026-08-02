@@ -103,6 +103,33 @@
   }
   header .sub{color:var(--ink-soft);font-size:.92rem;font-style:italic;margin:0}
 
+  /* The satellite mosaic is nearly square, so the whole continent is kept and
+     the band is filled out with the same deep blue as the image's own ocean. */
+  .hero{
+    position:relative;
+    height:clamp(150px,24vw,270px);
+    background:#04122e;
+    border-bottom:2px solid var(--ink);
+    overflow:hidden;
+    display:flex;align-items:center;justify-content:center;
+  }
+  /* the same mosaic, blown up and blurred, so the band has no dead margins */
+  .hero::before{
+    content:"";position:absolute;inset:0;
+    background:url(img/hero-europe.jpg) center/cover no-repeat;
+    filter:blur(30px) brightness(.42) saturate(.45);
+    transform:scale(1.2);
+  }
+  .hero img{
+    position:relative;display:block;height:100%;width:auto;max-width:none;
+    box-shadow:0 0 0 1px rgba(255,255,255,.18), 0 6px 26px rgba(0,0,0,.45);
+  }
+  /* On a phone the letterboxed plate would be tiny, so let it run full width. */
+  @media (max-width:560px){
+    .hero{height:auto}
+    .hero img{width:100%;height:auto}
+  }
+
   /* ---------- shell ---------- */
   .shell{display:flex;min-height:calc(100vh - 90px)}
   nav{
@@ -331,6 +358,10 @@
     body.reading #backBtn{display:inline-flex}
   }
 </style>
+
+<div class="hero">
+  <img src="img/hero-europe.jpg" alt="Satellite mosaic of Europe, from Iceland and Scandinavia down to North Africa and east to the Caspian Sea." decoding="async">
+</div>
 
 <header>
   <div class="kicker">Course Companion · For the Instructor</div>
@@ -2301,6 +2332,7 @@
 
   <h3>Illustrations &amp; Credits</h3>
   <p>The nineteen photographs and the three diagrams in this companion are reproduced under free licences and may be shown in class, put on a handout, or projected without seeking further permission — provided the credit line under each picture travels with it. Every photograph comes from Wikimedia Commons; each is either in the public domain or released under a Creative Commons licence (CC BY, CC BY-SA), which permits reuse, including commercially, on condition of attribution and — for the ShareAlike images — that any adapted version carries the same licence. The credit line printed beneath each image gives the photographer and the specific licence.</p>
+  <p>The banner across the top of the app is a NASA satellite mosaic of Europe (<em>Europe satellite orthographic</em>, Wikimedia Commons), which is in the public domain and free of any restriction.</p>
   <p>The three diagrams (the 100 Ma archipelago, the Messinian salinity crisis, and the Pleistocene glacial cycles) are original to this companion and may be reused freely. The text of the companion — chapter summaries, seminar questions and proposed answers — is likewise original, and paraphrases rather than reproduces Flannery, whose book remains in copyright and is not distributed here.</p>
   <div class="tip"><span class="tl">Teaching note</span>
     <p>The pictures are doing pedagogical work, not decoration. Three are worth a full slide on their own: <em>Magyarosaurus</em> beside the human silhouette (Ch. 3) settles the island rule in one glance; the Strait of Gibraltar from orbit (Ch. 20) makes the Messinian crisis a question of one narrow gap rather than an abstraction; and the Löwenmensch (Ch. 27) is the cleanest object lesson in the archaeology of mind that exists. Project them before explaining them and ask the class what they think they are looking at.</p>

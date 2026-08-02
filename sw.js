@@ -1,5 +1,6 @@
-var CACHE = 'enh-v2';
-var ASSETS = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-180.png'];
+var CACHE = 'enh-v3';
+var ASSETS = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-180.png',
+              './img/hero-europe.jpg'];
 var IMAGES = [
   './img/02-messel-pit.jpg', './img/03-darwinius.jpg', './img/04-magyarosaurus.jpg',
   './img/05-deinogalerix.jpg', './img/06-gibraltar.jpg', './img/07-mammoth.jpg',
