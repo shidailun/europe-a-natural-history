@@ -357,6 +357,73 @@
     body.reading nav{display:none}
     body.reading #backBtn{display:inline-flex}
   }
+
+  /* ---------- Ask the Author ---------- */
+  .tutor{
+    margin:2.4rem 0 0;border:1px solid var(--line);border-radius:4px;
+    background:var(--plate);box-shadow:var(--shadow);
+  }
+  .tutor .th{
+    padding:.75rem 1rem .55rem;border-bottom:1px solid var(--line-soft);
+    display:flex;align-items:baseline;gap:.5rem;flex-wrap:wrap;
+  }
+  .tutor .tt{font-variant:small-caps;letter-spacing:.06em;font-size:1.02rem}
+  .tutor .tn{
+    font-family:'Segoe UI',system-ui,sans-serif;font-size:.68rem;
+    color:var(--ink-faint);
+  }
+  .tutor .tbody{padding:.8rem 1rem .95rem}
+  .tutor .chips{display:flex;flex-wrap:wrap;gap:.4rem;margin:0 0 .75rem}
+  .tutor .chips button{
+    font-family:'Segoe UI',system-ui,sans-serif;font-size:.74rem;
+    border:1px solid var(--line);background:var(--paper);color:var(--ocean);
+    border-radius:999px;padding:.3rem .75rem;cursor:pointer;
+  }
+  .tutor .chips button:hover{border-color:var(--ocean)}
+  .tutor .log{margin:0 0 .8rem}
+  .tutor .log:empty{display:none}
+  .tutor .msg{margin:0 0 1rem;padding-left:.7rem;border-left:2px solid var(--line)}
+  .tutor .msg.on{border-left-color:var(--ocean)}
+  .tutor .q{
+    font-family:'Segoe UI',system-ui,sans-serif;font-size:.82rem;font-weight:600;
+    color:var(--ink-soft);margin:0 0 .45rem;
+  }
+  .tutor .a p{margin:0 0 .6rem;font-size:.94rem}
+  .tutor .a p:last-child{margin-bottom:0}
+  .tutor .a .bg{color:var(--ink-faint)}
+  .tutor .tools{
+    font-family:'Segoe UI',system-ui,sans-serif;font-size:.7rem;
+    color:var(--ink-faint);margin-top:.35rem;
+  }
+  .tutor .tools button{
+    font:inherit;border:0;background:none;color:var(--ocean);
+    cursor:pointer;padding:0;text-decoration:underline;
+  }
+  .tutor .row{display:flex;gap:.5rem;align-items:flex-start}
+  .tutor textarea,.tutor input{
+    flex:1;font-family:'Segoe UI',system-ui,sans-serif;font-size:.92rem;
+    padding:.5rem .6rem;border:1px solid var(--line);border-radius:4px;
+    background:var(--paper);color:var(--ink);
+  }
+  .tutor textarea{resize:vertical;min-height:2.9rem;line-height:1.45}
+  .tutor .go{
+    font-family:'Segoe UI',system-ui,sans-serif;font-size:.85rem;font-weight:600;
+    border:1px solid var(--ocean);background:var(--ocean);color:var(--plate);
+    border-radius:4px;padding:.55rem 1.1rem;cursor:pointer;
+  }
+  .tutor .go[disabled]{opacity:.5;cursor:default}
+  .tutor .note{
+    font-family:'Segoe UI',system-ui,sans-serif;font-size:.76rem;
+    color:var(--ink-soft);margin:0 0 .55rem;
+  }
+  .tutor .err{
+    font-family:'Segoe UI',system-ui,sans-serif;font-size:.78rem;
+    color:var(--signal);margin:.5rem 0 0;
+  }
+  @media (max-width:560px){
+    .tutor .row{flex-direction:column;align-items:stretch}
+    .tutor .go{width:100%}
+  }
 </style>
 
 <div class="hero">
@@ -2442,6 +2509,185 @@
   fsBtns.forEach(function(b){
     b.addEventListener('click',function(){setFS(parseInt(b.getAttribute('data-fs'),10),true);});
   });
+})();
+</script>
+
+
+<script>
+/* Ask the Author — a grounded tutor. The text it answers from lives on the
+   Worker, not here: this file is public, the books are not. */
+(function(){
+  var API='https://dad-tutor.shidailun.workers.dev', APP='enh', AUTHOR='Tim Flannery', CODEKEY='enh-tutor-code';
+  var SKIP={'Start Here':1,'Pedagogy & Syllabus':1};
+  var CHIPS=['Explain this chapter in three sentences',
+             'What will students find hardest here?',
+             'Give me two more seminar questions'];
+
+  function slug(s){
+    return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+            .toLowerCase().replace(/\u00b7/g,' ')
+            .replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+  }
+  function el(tag,cls,txt){
+    var e=document.createElement(tag);
+    if(cls)e.className=cls;
+    if(txt!=null)e.textContent=txt;
+    return e;
+  }
+  function getCode(){try{return localStorage.getItem(CODEKEY)||'';}catch(e){return '';}}
+  function setCode(v){try{localStorage.setItem(CODEKEY,v);}catch(e){}}
+
+  function render(box,text){
+    box.textContent='';
+    var paras=text.split(/\n\s*\n/);
+    for(var i=0;i<paras.length;i++){
+      var t=paras[i].replace(/\n/g,' ').trim();
+      if(!t)continue;
+      var p=el('p',/^Background:/.test(t)?'bg':null,t);
+      box.appendChild(p);
+    }
+  }
+
+  function build(sec){
+    var title=sec.getAttribute('data-t');
+    if(SKIP[title])return;
+    var chapter=slug(title);
+    var history=[];
+
+    var wrap=el('div','tutor');
+    var head=el('div','th');
+    head.appendChild(el('span','tt','Ask the Author'));
+    head.appendChild(el('span','tn','Not '+AUTHOR+' \u2014 an assistant answering from his book, about this chapter'));
+    wrap.appendChild(head);
+
+    var body=el('div','tbody');
+    var log=el('div','log');
+    var chips=el('div','chips');
+    CHIPS.forEach(function(c){
+      var b=el('button','',c);b.type='button';
+      b.addEventListener('click',function(){ta.value=c;send();});
+      chips.appendChild(b);
+    });
+    var row=el('div','row');
+    var ta=document.createElement('textarea');
+    ta.rows=2;ta.placeholder='Ask about this chapter\u2026';
+    ta.setAttribute('data-gramm','false');
+    ta.setAttribute('aria-label','Ask about this chapter');
+    var go=el('button','go','Ask');go.type='button';
+    row.appendChild(ta);row.appendChild(go);
+    var err=el('p','err');err.hidden=true;
+
+    body.appendChild(log);body.appendChild(chips);body.appendChild(row);body.appendChild(err);
+    wrap.appendChild(body);
+    sec.appendChild(wrap);
+
+    function fail(msg){err.textContent=msg;err.hidden=false;}
+
+    function askCode(then){
+      var note=el('p','note','This tutor is passcode-protected. Enter the code once and this device will remember it.');
+      var r=el('div','row');
+      var inp=document.createElement('input');
+      inp.type='text';inp.placeholder='Passcode';inp.setAttribute('data-gramm','false');
+      inp.setAttribute('aria-label','Passcode');
+      var ok=el('button','go','Save');ok.type='button';
+      r.appendChild(inp);r.appendChild(ok);
+      body.insertBefore(r,row);body.insertBefore(note,r);
+      function save(){
+        var v=inp.value.trim();
+        if(!v)return;
+        setCode(v);body.removeChild(r);body.removeChild(note);then();
+      }
+      ok.addEventListener('click',save);
+      inp.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();save();}});
+      inp.focus();
+    }
+
+    function send(){
+      var q=ta.value.trim();
+      if(!q)return;
+      err.hidden=true;
+      if(!getCode()){askCode(send);return;}
+      if(!navigator.onLine){fail('The tutor needs a connection \u2014 the rest of the app works offline.');return;}
+
+      var msg=el('div','msg on');
+      msg.appendChild(el('p','q',q));
+      var ans=el('div','a');
+      ans.appendChild(el('p',null,'\u2026'));
+      msg.appendChild(ans);
+      log.appendChild(msg);
+      ta.value='';go.disabled=true;go.textContent='Thinking';
+
+      var acc='';
+      function finish(){
+        go.disabled=false;go.textContent='Ask';
+        msg.classList.remove('on');
+        if(!acc)return;
+        history.push({role:'user',content:q});
+        history.push({role:'assistant',content:acc});
+        if(history.length>6)history=history.slice(-6);
+        var tools=el('div','tools');
+        var cp=el('button','','Copy');cp.type='button';
+        cp.addEventListener('click',function(){
+          try{navigator.clipboard.writeText(acc);cp.textContent='Copied';}catch(e){}
+        });
+        tools.appendChild(cp);
+        msg.appendChild(tools);
+      }
+
+      fetch(API+'/ask',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({app:APP,chapter:chapter,question:q,history:history,code:getCode()})
+      }).then(function(res){
+        if(!res.ok){
+          return res.json().catch(function(){return {};}).then(function(j){
+            log.removeChild(msg);go.disabled=false;go.textContent='Ask';ta.value=q;
+            if(j.error==='code'){setCode('');fail('That passcode was not recognised.');askCode(send);}
+            else fail(j.message||'The tutor could not answer just now.');
+            throw new Error('handled');
+          });
+        }
+        if(!res.body){
+          return res.text().then(function(t){feed(t);finish();});
+        }
+        var reader=res.body.getReader(),dec=new TextDecoder(),buf='';
+        return (function pump(){
+          return reader.read().then(function(r){
+            if(r.done){feed(buf,true);finish();return;}
+            buf+=dec.decode(r.value,{stream:true});
+            var cut=buf.lastIndexOf('\n');
+            if(cut>-1){feed(buf.slice(0,cut));buf=buf.slice(cut+1);}
+            return pump();
+          });
+        })();
+      }).catch(function(e){
+        if(e&&e.message==='handled')return;
+        log.removeChild(msg);go.disabled=false;go.textContent='Ask';ta.value=q;
+        fail('Could not reach the tutor. Check the connection and try again.');
+      });
+
+      function feed(chunk){
+        var lines=chunk.split('\n');
+        for(var i=0;i<lines.length;i++){
+          var ln=lines[i];
+          if(ln.indexOf('data: ')!==0)continue;
+          try{
+            var d=JSON.parse(ln.slice(6));
+            if(d.type==='content_block_delta'&&d.delta&&d.delta.text){
+              acc+=d.delta.text;render(ans,acc);
+            }
+          }catch(e){}
+        }
+      }
+    }
+
+    go.addEventListener('click',send);
+    ta.addEventListener('keydown',function(e){
+      if(e.key==='Enter'&&(e.metaKey||e.ctrlKey)){e.preventDefault();send();}
+    });
+  }
+
+  [].slice.call(document.querySelectorAll('section')).forEach(build);
 })();
 </script>
 

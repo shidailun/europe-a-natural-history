@@ -1,4 +1,4 @@
-var CACHE = 'enh-v3';
+var CACHE = 'enh-v4';
 var ASSETS = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-180.png',
               './img/hero-europe.jpg'];
 var IMAGES = [
