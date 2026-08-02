@@ -1,9 +1,26 @@
-var CACHE = 'enh-v1';
+var CACHE = 'enh-v2';
 var ASSETS = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-180.png'];
+var IMAGES = [
+  './img/02-messel-pit.jpg', './img/03-darwinius.jpg', './img/04-magyarosaurus.jpg',
+  './img/05-deinogalerix.jpg', './img/06-gibraltar.jpg', './img/07-mammoth.jpg',
+  './img/08-cave-lion.jpg', './img/09-neanderthal.jpg', './img/10-chauvet.jpg',
+  './img/11-lion-man.jpg', './img/12-altamira.jpg', './img/13-gobekli-tepe.jpg',
+  './img/14-aurochs.jpg', './img/15-great-auk.jpg', './img/17-bison.jpg',
+  './img/18-koniks.jpg', './img/19-macaque.jpg', './img/20-lynx.jpg',
+  './img/21-nopcsa.jpg'
+];
 
 self.addEventListener('install', function (e) {
   e.waitUntil(
-    caches.open(CACHE).then(function (c) { return c.addAll(ASSETS); }).then(function () { return self.skipWaiting(); })
+    caches.open(CACHE).then(function (c) {
+      // The shell must land in full, or the install fails and we retry later.
+      return c.addAll(ASSETS).then(function () {
+        // Photographs are cached one by one so a single failure can't strand the app.
+        return Promise.all(IMAGES.map(function (u) {
+          return c.add(u).catch(function () {});
+        }));
+      });
+    }).then(function () { return self.skipWaiting(); })
   );
 });
 
