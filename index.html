@@ -2606,7 +2606,6 @@
       var q=ta.value.trim();
       if(!q)return;
       err.hidden=true;
-      if(!getCode()){askCode(send);return;}
       if(!navigator.onLine){fail('The tutor needs a connection \u2014 the rest of the app works offline.');return;}
 
       var msg=el('div','msg on');
@@ -2642,7 +2641,7 @@
         if(!res.ok){
           return res.json().catch(function(){return {};}).then(function(j){
             log.removeChild(msg);go.disabled=false;go.textContent='Ask';ta.value=q;
-            if(j.error==='code'){setCode('');fail('That passcode was not recognised.');askCode(send);}
+            if(j.error==='code'){setCode('');fail('This tutor needs a passcode.');askCode(send);}
             else fail(j.message||'The tutor could not answer just now.');
             throw new Error('handled');
           });
